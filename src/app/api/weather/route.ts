@@ -1,3 +1,8 @@
+import axios from 'axios';
+import https from 'node:https';
+
+const ipv4HttpsAgent = new https.Agent({ family: 4 });
+
 export const POST = async (req: Request) => {
   try {
     const body: {
@@ -15,13 +20,14 @@ export const POST = async (req: Request) => {
       );
     }
 
-    const res = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${body.lat}&longitude=${body.lng}&current=weather_code,temperature_2m,is_day,relative_humidity_2m,wind_speed_10m&timezone=auto${
-        body.measureUnit === 'Metric' ? '' : '&temperature_unit=fahrenheit'
-      }${body.measureUnit === 'Metric' ? '' : '&wind_speed_unit=mph'}`,
-    );
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${body.lat}&longitude=${body.lng}&current=weather_code,temperature_2m,is_day,relative_humidity_2m,wind_speed_10m&timezone=auto${
+      body.measureUnit === 'Metric' ? '' : '&temperature_unit=fahrenheit'
+    }${body.measureUnit === 'Metric' ? '' : '&wind_speed_unit=mph'}`;
 
-    const data = await res.json();
+    const { data } = await axios.get(weatherUrl, {
+      timeout: 10000,
+      httpsAgent: ipv4HttpsAgent,
+    });
 
     if (data.error) {
       console.error(`Error fetching weather data: ${data.reason}`);
